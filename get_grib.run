@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# Cd into our working directory in case we're not into it already
+cd "$(dirname "$0")";
+
+echo "gfs: Starting processing of GEFS model data - `date`"
+
+export GRIBDIR=/tmp/gfs/
+export IMGDIR=/tmp/gfs/
+export HOME_SCRIPTS=$(pwd)
+export NCFTP_BOOKMARK="altervista"
+DATA_DOWNLOAD=true
+DATA_PLOTTING=false
+DATA_UPLOAD=false
+
+#
+. ./functions_download_gefs.sh
+export SHELL=$(type -p bash)
+# We need to open many files at the same time
+ulimit -Sn 8192
+########################################### 
+
+mkdir -p ${GRIBDIR}it
+mkdir -p ${GRIBDIR}nh
+
+##### COMPUTE the date variables to determine the run
+export MONTH=$(date -u +"%m")
+export DATE=$(date -u +"%d")
+export YEAR=$(date -u +"%Y")
+export HOUR=$(date -u +"%H")
+
+if [ $HOUR -ge 6 ] && [ $HOUR -lt 12 ]
+then
+    export RUN=00
+elif [ $HOUR -ge 12 ] && [ $HOUR -lt 18 ]
+then
+    export RUN=06
+elif [ $HOUR -ge 18 ]
+then
+    export RUN=12
+elif [ $HOUR -ge 00 ] && [ $HOUR -lt 6 ]
+then
+    DATE=$(date -u -d'yesterday' +"%d")
+    export RUN=18
+else
+    echo "Invalid hour!"
+fi
+
+# Move to the data folder to do processing
+cd ${GRIBDIR} || { echo 'Cannot change to DATA folder' ; exit 1; }
+
+
+# SECTION 1 - DATA DOWNLOAD ############################################################
+
+if [ "$DATA_DOWNLOAD" = true ]; then
+    echo "-----------------------------------------------"
+    echo "gfs: Starting downloading of data - `date`"
+    echo "-----------------------------------------------"
+
+    #loop through forecast hours
+    hours_download=$(seq -s " " 3 3 384)
+    # hours_download=$(seq -s " " 3 3 12)
+    export SKIP_SAME_TIME=1
+    export CDI_INVENTORY_MODE=time
+    #clean out the old grib data
+    rm ${GRIBDIR}grib_gfs*
+    rm ${GRIBDIR}*.nc
+
+    parallel -j 20 download_gfs_data ::: $hours_download
+
+    rm *.tmp
+
+    # We need sellonlatbox to shift the grid from 0,360 to -180, 180. Somehow it is
+    # easier to do it now that afterwars in Python
+    cdo -f nc copy -sellonlatbox,-180,180,-90,90 -mergetime \
+                    $GRIBDIR/"grib_gfs_"$YEAR$MONTH$DATE"_"$RUN"_*" \
+                    $GRIBDIR/"gfs_${YEAR}${MONTH}${DATE}${RUN}.nc"
+    rm *.grib
+    # Remove all the non-netcdf files which are not necessary 
+    #rm $GRIBDIR/*[!.nc]
+fi
+
+# SECTION 2 - DATA PLOTTING ############################################################
+
+# if [ "$DATA_PLOTTING" = true ]; then
+
+
+# fi
+
+
+# SECTION 3 - IMAGES UPLOAD ############################################################
+# Use ncftpbookmarks to add a new FTP server with credentials
+# if [ "$DATA_UPLOAD" = true ]; then
+# fi
+
+# SECTION 4 - CLEANING ############################################################
+
+#Remove images locally
+
+echo "-----------------------------------------------"
+echo "gfs: Finished cleaning up - `date`"
+echo "----------------------------------------------_"
+
+############################################################
+
+cd -
