@@ -53,11 +53,11 @@ options_savefig = {
 
 # Dictionary to map the output folder based on the projection employed
 subfolder_images = {
-    'euratl' : folder_images,
+    'euratl' : folder_images+'euratl',
     'it' : folder_images+'it',
     'de' : folder_images+'de',
     'euratl_new' : folder_images,
-    'nh': folder_images+'nh'
+    'nh_polar': folder_images+'nh_polar'
 }
 
 folder_glyph = home_folder + '/plotting/yrno_png/'
@@ -110,7 +110,7 @@ WMO_GLYPH_LOOKUP_PNG = {
 }
 
 proj_defs = {
-    'nh':
+    'nh_polar':
     {
         'projection': 'nplaea',
         'boundinglat': 20,
@@ -120,7 +120,7 @@ proj_defs = {
         'llcrnrlon': -180,
         'llcrnrlat': -30,
         'urcrnrlon': 180,
-        'urcrnrlat': 90,
+        'urcrnrlat': 90
     },
     'euratl':
     {

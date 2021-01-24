@@ -3,15 +3,19 @@
 # Cd into our working directory in case we're not into it already
 cd "$(dirname "$0")";
 
+echo "----------------------------------------------------------------------------------------------"
 echo "gfs: Starting processing of GEFS model data - `date`"
+echo "----------------------------------------------------------------------------------------------"
 
 export GRIBDIR=/tmp/gfs/
 export IMGDIR=/tmp/gfs/
+export MODEL_DATA_FOLDER=/tmp/gfs/
 export HOME_SCRIPTS=$(pwd)
+export HOME_FOLDER=$(pwd)
 export NCFTP_BOOKMARK="altervista"
-DATA_DOWNLOAD=true
+DATA_DOWNLOAD=false
 DATA_PLOTTING=false
-DATA_UPLOAD=false
+DATA_UPLOAD=true
 
 #
 . ./functions_download_gefs.sh
@@ -21,7 +25,10 @@ ulimit -Sn 8192
 ########################################### 
 
 mkdir -p ${GRIBDIR}it
-mkdir -p ${GRIBDIR}nh
+mkdir -p ${GRIBDIR}it
+mkdir -p ${GRIBDIR}de
+mkdir -p ${GRIBDIR}euratl
+mkdir -p ${GRIBDIR}nh_polar
 
 ##### COMPUTE the date variables to determine the run
 export MONTH=$(date -u +"%m")
@@ -47,15 +54,17 @@ else
 fi
 
 # Move to the data folder to do processing
+
+
 cd ${GRIBDIR} || { echo 'Cannot change to DATA folder' ; exit 1; }
 
 
 # SECTION 1 - DATA DOWNLOAD ############################################################
 
 if [ "$DATA_DOWNLOAD" = true ]; then
-    echo "-----------------------------------------------"
+    echo "----------------------------------------------------------------------------------------------"
     echo "gfs: Starting downloading of data - `date`"
-    echo "-----------------------------------------------"
+    echo "----------------------------------------------------------------------------------------------"
 
     #loop through forecast hours
     hours_download=$(seq -s " " 3 3 384)
@@ -82,24 +91,59 @@ fi
 
 # SECTION 2 - DATA PLOTTING ############################################################
 
-# if [ "$DATA_PLOTTING" = true ]; then
+if [ "$DATA_PLOTTING" = true ]; then
+    echo "----------------------------------------------------------------------------------------------"
+    echo "gfs: Starting plotting of data - `date`"
+    echo "----------------------------------------------------------------------------------------------"
+    python --version
+    cp ${HOME_FOLDER}/plotting/*.py ${MODEL_DATA_FOLDER}
 
+    export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
 
-# fi
+    scripts=("plot_gph_500_mslp.py" "plot_gph_t_50.py" "plot_gph_t_10.py" "plot_gph_t_850.py" "plot_rain_acc.py")
+
+    projections=("euratl" "it" "de" "nh_polar")
+
+    parallel -j 5 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
+    rm ${MODEL_DATA_FOLDER}*.py
+fi
 
 
 # SECTION 3 - IMAGES UPLOAD ############################################################
 # Use ncftpbookmarks to add a new FTP server with credentials
-# if [ "$DATA_UPLOAD" = true ]; then
-# fi
+if [ "$DATA_UPLOAD" = true ]; then
+    echo "----------------------------------------------------------------------------------------------"
+    echo "gfs: Starting FTP uploading - `date`"
+    echo "----------------------------------------------------------------------------------------------"
+    # Then upload the other pictures
+    #
+    images_output=("gph_500_mslp" "gph_t_50" "gph_t_850" "precip_acc" "gph_t_10")
+
+    # suffix for naming
+    projections_output=("euratl/" "it/" "de/" "nh_polar/")
+    # remote folder on server
+    projections_output_folder=("gfs_euratl" "gfs_it" "gfs_de" "gfs_nh_polar")
+
+    # Create a lisf of all the images to upload 
+    upload_elements=()
+    for i in "${!projections_output[@]}"; do
+        for j in "${images_output[@]}"; do
+                upload_elements+=("${projections_output_folder[$i]}/${j} ./${projections_output[$i]}${j}_*")
+        done
+    done
+
+    for k in "${upload_elements[@]}"; do
+        ncftpput -R -v -DD -m ${NCFTP_BOOKMARK} ${k}
+    done
+fi
 
 # SECTION 4 - CLEANING ############################################################
 
 #Remove images locally
 
-echo "-----------------------------------------------"
+echo "----------------------------------------------------------------------------------------------"
 echo "gfs: Finished cleaning up - `date`"
-echo "----------------------------------------------_"
+echo "----------------------------------------------------------------------------------------------"
 
 ############################################################
 
