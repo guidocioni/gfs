@@ -47,7 +47,7 @@ def main():
 
     dset = dset.drop(['lon', 'lat']).load()
 
-    if projection == 'nh':
+    if projection == 'nh_polar':
         density = 8
     else:
         density = 4
@@ -97,9 +97,9 @@ def plot_files(dss, **args):
                                    fontsize=6)
 
         maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                        'max', 90, symbol='H', color='royalblue', random=True)
+                                        'max', 130, symbol='H', color='royalblue', random=True)
         minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                        'min', 90, symbol='L', color='coral', random=True)
+                                        'min', 130, symbol='L', color='coral', random=True)
 
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 

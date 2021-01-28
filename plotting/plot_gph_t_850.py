@@ -107,9 +107,9 @@ def plot_files(dss, **args):
 
 
         maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['gh'],
-                                        'max', 80, symbol='H', color='royalblue', random=True)
+                                        'max', 150, symbol='H', color='royalblue', random=True)
         minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['gh'],
-                                        'min', 80, symbol='L', color='coral', random=True)
+                                        'min', 150, symbol='L', color='coral', random=True)
 
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 

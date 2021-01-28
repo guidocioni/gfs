@@ -53,7 +53,7 @@ def main():
     dset = dset.drop(['lon', 'lat']).load()
 
     levels_mslp = np.arange(dset['prmsl'].min().astype("int"),
-                            dset['prmsl'].max().astype("int"), 4.)
+                            dset['prmsl'].max().astype("int"), 5.)
 
     # All the arguments that need to be passed to the plotting function
     args=dict(x=x, y=y, ax=ax,
@@ -96,9 +96,9 @@ def plot_files(dss, **args):
 
         if projection != 'nh':
             maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                            'max', 40, symbol='H', color='royalblue', random=True)
+                                            'max', 150, symbol='H', color='royalblue', random=True)
             minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                            'min', 40, symbol='L', color='coral', random=True)
+                                            'min', 150, symbol='L', color='coral', random=True)
 
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Accumulated precipitation and MSLP [hPa]',

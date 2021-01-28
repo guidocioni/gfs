@@ -13,8 +13,8 @@ export MODEL_DATA_FOLDER=/tmp/gfs/
 export HOME_SCRIPTS=$(pwd)
 export HOME_FOLDER=$(pwd)
 export NCFTP_BOOKMARK="altervista"
-DATA_DOWNLOAD=false
-DATA_PLOTTING=false
+DATA_DOWNLOAD=true
+DATA_PLOTTING=true
 DATA_UPLOAD=true
 
 #
@@ -36,22 +36,26 @@ export DATE=$(date -u +"%d")
 export YEAR=$(date -u +"%Y")
 export HOUR=$(date -u +"%H")
 
-if [ $HOUR -ge 6 ] && [ $HOUR -lt 12 ]
+if [ $HOUR -ge 5 ] && [ $HOUR -lt 11 ]
 then
     export RUN=00
-elif [ $HOUR -ge 12 ] && [ $HOUR -lt 18 ]
+elif [ $HOUR -ge 11 ] && [ $HOUR -lt 17 ]
 then
     export RUN=06
-elif [ $HOUR -ge 18 ]
+elif [ $HOUR -ge 17 ]
 then
     export RUN=12
-elif [ $HOUR -ge 00 ] && [ $HOUR -lt 6 ]
+elif [ $HOUR -ge 00 ] && [ $HOUR -lt 5 ]
 then
     DATE=$(date -u -d'yesterday' +"%d")
     export RUN=18
 else
     echo "Invalid hour!"
 fi
+
+echo "----------------------------------------------------------------------------------------------"
+echo "gfs: run ${YEAR}${MONTH}${DATE}${RUN}"
+echo "----------------------------------------------------------------------------------------------"
 
 # Move to the data folder to do processing
 
@@ -100,11 +104,13 @@ if [ "$DATA_PLOTTING" = true ]; then
 
     export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
 
-    scripts=("plot_gph_500_mslp.py" "plot_gph_t_50.py" "plot_gph_t_10.py" "plot_gph_t_850.py" "plot_rain_acc.py")
+    scripts=("plot_gph_500_mslp.py" "plot_gph_t_50.py" "plot_gph_t_10.py" "plot_gph_t_850.py" \
+             "plot_rain_acc.py" "plot_pv_250.py" "plot_rain_clouds.py" "plot_hsnow.py")
 
     projections=("euratl" "it" "de" "nh_polar")
+    #projections=("euratl" "nh_polar")
 
-    parallel -j 5 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
+    parallel -j 5 --delay 2 python ::: "${scripts[@]}" ::: "${projections[@]}"
     rm ${MODEL_DATA_FOLDER}*.py
 fi
 
@@ -117,12 +123,15 @@ if [ "$DATA_UPLOAD" = true ]; then
     echo "----------------------------------------------------------------------------------------------"
     # Then upload the other pictures
     #
-    images_output=("gph_500_mslp" "gph_t_50" "gph_t_850" "precip_acc" "gph_t_10")
+    images_output=("gph_500_mslp" "gph_t_50" "gph_t_850" "precip_acc" "gph_t_10" "pv_250" \
+                    "hsnow" "precip_clouds")
 
     # suffix for naming
     projections_output=("euratl/" "it/" "de/" "nh_polar/")
+    #projections_output=("euratl/" "nh_polar/")
     # remote folder on server
     projections_output_folder=("gfs_euratl" "gfs_it" "gfs_de" "gfs_nh_polar")
+    #projections_output_folder=("gfs_euratl" "gfs_nh_polar")
 
     # Create a lisf of all the images to upload 
     upload_elements=()

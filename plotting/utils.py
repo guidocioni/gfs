@@ -120,7 +120,7 @@ proj_defs = {
         'llcrnrlon': -180,
         'llcrnrlat': -30,
         'urcrnrlon': 180,
-        'urcrnrlat': 90
+        'urcrnrlat': 90,
     },
     'euratl':
     {

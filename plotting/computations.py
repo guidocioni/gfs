@@ -170,23 +170,17 @@ def compute_wind_speed(dset, uvar='u', vvar='v'):
 
 
 def compute_rate(dset):
-    '''Given an accumulated variable compute the step rate'''
-    try:
-        rain_acc = dset['RAIN_GSP'] + dset['RAIN_CON']
-    except:
-        rain_acc = dset['RAIN_GSP']
-    try:
-        snow_acc = dset['SNOW_GSP'] + dset['SNOW_CON']
-    except:
-        snow_acc = dset['SNOW_GSP']
+    dset.prate.metpy.convert_units('kilogram / meter ** 2 / hour')
+    rain = dset.prate.where(dset.crain == 1)
+    rain.name = 'rain_rate'
+    snow = dset.prate.where(dset.csnow == 1)
+    snow.name = 'snow_rate'
+    ice = dset.prate.where(dset.cicep == 1)
+    ice.name = 'ice_rate'
+    frzr = dset.prate.where(dset.cfrzr == 1)
+    frzr.name = 'frzr_rate'
 
-    rain = rain_acc.load().differentiate(coord="time", datetime_unit="h")
-    snow = snow_acc.load().differentiate(coord="time", datetime_unit="h")
-
-    rain = xr.DataArray(rain, name='rain_rate')
-    snow = xr.DataArray(snow, name='snow_rate')
-
-    return xr.merge([dset, rain, snow])
+    return xr.merge([dset, rain, snow, ice, frzr])
 
 
 def compute_soil_moisture_sat(dset, projection):
