@@ -39,7 +39,8 @@ def main():
 
     dset = compute_snow_change(dset)
 
-    levels_hsnow = np.linspace(-40, 40, 11)
+    levels_hsnow = (-50, -40, -30, -20, -10, -5, -2.5, -2, -1, -0.5,
+                    0, 0.5, 1, 2, 2.5, 5, 10, 20, 30, 40, 50)
     levels_snowlmt = np.arange(0., 3000., 500.)
 
     cmap, norm = from_levels_and_colors(levels_hsnow, 
@@ -91,7 +92,16 @@ def plot_files(dss, **args):
                                  norm=args['norm'],
                                  levels=args['levels_hsnow'])
 
-        # Unfortunately m.contour with tri = True doesn't work because of a bug 
+
+        css = args['ax'].contour(args['x'], args['y'],
+                                 data['snow_increment'],
+                                 levels=args['levels_hsnow'],
+                                 colors='gray',
+                                 linewidths=0.2)
+
+        labels2 = args['ax'].clabel(css, css.levels,
+            inline=True, fmt='%4.0f', fontsize=6)
+
         c = args['ax'].contour(args['x'], args['y'],
                                data['gh_2'],
                                levels=args['levels_snowlmt'],
@@ -108,14 +118,15 @@ def plot_files(dss, **args):
                                 zoom=0.1, pos=(0.95, 0.08))
 
         if first:
-            plt.colorbar(cs, orientation='horizontal', label='Snow depth change [m]', pad=0.035, fraction=0.03)
+            cb = plt.colorbar(cs, orientation='horizontal', label='Snow depth change [m]',
+                pad=0.038, fraction=0.035, ticks=args['levels_hsnow'][::2])
 
         if debug:
             plt.show(block=True)
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, labels, an_fc, an_var, an_run, logo])
+        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run, logo])
 
         first = False 
 
