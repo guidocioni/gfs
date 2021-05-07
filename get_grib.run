@@ -4,7 +4,7 @@
 cd "$(dirname "$0")";
 
 echo "----------------------------------------------------------------------------------------------"
-echo "gfs: Starting processing of GEFS model data - `date`"
+echo "gfs: Starting processing of GFS model data - `date`"
 echo "----------------------------------------------------------------------------------------------"
 
 export GRIBDIR=/tmp/gfs/
@@ -82,12 +82,15 @@ if [ "$DATA_DOWNLOAD" = true ]; then
     parallel -j 20 download_gfs_data ::: $hours_download
 
     rm *.tmp
+    # Delete empty files
+    FILENAMES=$GRIBDIR"grib_gfs_"$YEAR$MONTH$DATE"_"$RUN"_*"
+    find $FILENAMES -empty -type f -delete
 
     # We need sellonlatbox to shift the grid from 0,360 to -180, 180. Somehow it is
     # easier to do it now that afterwars in Python
     cdo -f nc copy -sellonlatbox,-180,180,-90,90 -mergetime \
-                    $GRIBDIR/"grib_gfs_"$YEAR$MONTH$DATE"_"$RUN"_*" \
-                    $GRIBDIR/"gfs_${YEAR}${MONTH}${DATE}${RUN}.nc"
+                    $GRIBDIR"grib_gfs_"$YEAR$MONTH$DATE"_"$RUN"_*" \
+                    $GRIBDIR"gfs_${YEAR}${MONTH}${DATE}${RUN}.nc"
     rm *.grib
     # Remove all the non-netcdf files which are not necessary 
     #rm $GRIBDIR/*[!.nc]
