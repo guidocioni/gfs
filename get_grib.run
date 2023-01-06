@@ -14,8 +14,8 @@ export HOME_SCRIPTS=$(pwd)
 export HOME_FOLDER=$(pwd)
 export NCFTP_BOOKMARK="mid"
 DATA_DOWNLOAD=true
-DATA_PLOTTING=true
-DATA_UPLOAD=true
+DATA_PLOTTING=false
+DATA_UPLOAD=false
 
 #
 export SHELL=$(type -p bash)
@@ -23,7 +23,6 @@ export SHELL=$(type -p bash)
 ulimit -Sn 8192
 ########################################### 
 
-mkdir -p ${GRIBDIR}it
 mkdir -p ${GRIBDIR}it
 mkdir -p ${GRIBDIR}de
 mkdir -p ${GRIBDIR}euratl
@@ -79,8 +78,8 @@ if [ "$DATA_DOWNLOAD" = true ]; then
     python downloader.py \
     -d "${YEAR}${MONTH}${DAY}" \
     -r "${RUN}" \
-    -v "PRMSL" "HGT" "TMP" "HGT" "TMP" "HGT" "TMP" "HGT" "TMP" "HGT" "SNOD" "CRAIN" "CSNOW" "PRATE" "APCP" "UGRD" "UGRD" "UGRD" "VGRD" "VGRD" "VGRD" "TMP" "TMP" "TMP"   \
-    -l "mean sea level" "500 mb" "500 mb" "10 mb" "10 mb" "50 mb" "50 mb" "850 mb" "850 mb" "0C isotherm" "surface" "surface" "surface" "surface" "surface" "150 mb" "250 mb" "300 mb" "150 mb" "250 mb" "300 mb" "150 mb" "250 mb" "300 mb" \
+    -v "PRMSL" "SNOD" "CRAIN" "CSNOW" "PRATE" "APCP" "TMP" "TMP" "TMP" "TMP" "TMP" "TMP" "TMP" "HGT" "HGT" "HGT" "HGT" "HGT" "HGT" "HGT" "UGRD" "UGRD" "UGRD" "UGRD" "UGRD" "UGRD" "UGRD" "VGRD" "VGRD" "VGRD" "VGRD" "VGRD" "VGRD" "VGRD" "TCDC" "HGT"  \
+    -l "mean sea level" "surface" "surface" "surface" "surface" "surface" "10 mb" "50 mb" "150 mb" "250 mb" "300 mb" "500 mb" "850 mb" "10 mb" "50 mb" "150 mb" "250 mb" "300 mb" "500 mb" "850 mb" "10 mb" "50 mb" "150 mb" "250 mb" "300 mb" "500 mb" "850 mb" "10 mb" "50 mb" "150 mb" "250 mb" "300 mb" "500 mb" "850 mb" "entire atmosphere" "0C isotherm" \
     -o "${MODEL_DATA_FOLDER}"
     if [[ $? = 0 ]]; then
         echo "Downloaded files succesfully"
@@ -98,7 +97,7 @@ if [ "$DATA_DOWNLOAD" = true ]; then
     cdo -f nc copy -sellonlatbox,-180,180,-90,90 -mergetime \
                     $GRIBDIR"grib_gfs_"$YEAR$MONTH$DAY"_"$RUN"_*" \
                     $GRIBDIR"gfs_${YEAR}${MONTH}${DAY}${RUN}.nc"
-    rm $GRIBDIR"grib_gfs_"$YEAR$MONTH$DAY"_"$RUN"_*"
+    rm "${GRIBDIR}grib_gfs_${YEAR}${MONTH}${DAY}_${RUN}_*"
 fi
 
 # SECTION 2 - DATA PLOTTING ############################################################
@@ -118,7 +117,7 @@ if [ "$DATA_PLOTTING" = true ]; then
     projections=("euratl" "it" "de" "nh_polar")
     #projections=("euratl" "nh_polar")
 
-    parallel -j 5 --delay 2 python ::: "${scripts[@]}" ::: "${projections[@]}"
+    parallel -j 4 --delay 2 python ::: "${scripts[@]}" ::: "${projections[@]}"
     rm ${MODEL_DATA_FOLDER}*.py
 fi
 

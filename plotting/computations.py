@@ -1,38 +1,38 @@
 import metpy.calc as mpcalc
 import xarray as xr
 from metpy.units import units
-from utils import *
+
 
 def compute_spacing(dset):
     dx, dy = mpcalc.lat_lon_grid_deltas(dset['lon'],
                                         dset['lat'])
-    
+
     dx = xr.DataArray(dx.magnitude,
-             dims=['y1', 'x1'],
-           attrs={'standard_name': 'x grid spacing',
-                  'units': dx.units},
-                       name='dx')
+                      dims=['y1', 'x1'],
+                      attrs={'standard_name': 'x grid spacing',
+                             'units': dx.units},
+                      name='dx')
     dy = xr.DataArray(dy.magnitude,
-             dims=['y2', 'x2'],
-           attrs={'standard_name': 'y grid spacing',
-                  'units': dx.units},
-                       name='dy')
-    
+                      dims=['y2', 'x2'],
+                      attrs={'standard_name': 'y grid spacing',
+                             'units': dx.units},
+                      name='dy')
+
     out = xr.merge([dset, dx, dy])
     out.attrs = dset.attrs
-    
+
     return out
 
 
 def compute_theta(dset, tvar='t'):
-    pres =  dset['plev'].metpy.unit_array
+    pres = dset['plev'].metpy.unit_array
     theta = mpcalc.potential_temperature(pres[:, None, None], dset[tvar])
-    
-    theta = xr.DataArray(theta.magnitude,
-                           coords= dset[tvar].coords,
-                           attrs={'standard_name': 'Potential Temperature',
-                                  'units': theta.units},
-                            name='theta')
+
+    theta = xr.DataArray(theta,
+                         coords=dset[tvar].coords,
+                         attrs={'standard_name': 'Potential Temperature',
+                                'units': 'K'},
+                         name='theta')
 
     out = xr.merge([dset, theta])
     out.attrs = dset.attrs
@@ -40,12 +40,12 @@ def compute_theta(dset, tvar='t'):
     return out
 
 
-# Only call this on a time-subset dataset!! 
+# Only call this on a time-subset dataset!!
 def compute_pv(dset):
     dx = dset['dx'].values[:] * units(str(dset['dx'].units))
     dy = dset['dy'].values[:] * units(str(dset['dy'].units))
     lats = dset['lat'].metpy.unit_array
-    pres =  dset['plev'].metpy.unit_array
+    pres = dset['plev'].metpy.unit_array
     theta = dset['theta'].values[:] * units(str(dset['theta'].units))
     pv = mpcalc.potential_vorticity_baroclinic(theta,
                                                pres[:, None, None],
@@ -54,13 +54,13 @@ def compute_pv(dset):
                                                dx[None, :, :], dy[None, :, :],
                                                lats[None, :, None]
                                                )
-    
+
     pv = xr.DataArray(pv.magnitude,
-                       coords=dset['u'].coords,
-                       attrs={'standard_name': 'Potential Vorticity',
-                              'units': pv.units},
-                       name='pv')
-    
+                      coords=dset['u'].coords,
+                      attrs={'standard_name': 'Potential Vorticity',
+                             'units': pv.units},
+                      name='pv')
+
     out = xr.merge([dset, pv])
     out.attrs = dset.attrs
 
@@ -118,10 +118,10 @@ def compute_thetae(dset, tvar='t', rvar='r'):
                                                       rh).to('degC')
 
     theta_e = xr.DataArray(theta_e.magnitude,
-                           coords= dset['t'].coords,
+                           coords=dset['t'].coords,
                            attrs={'standard_name': 'Equivalent potential temperature',
                                   'units': theta_e.units},
-                            name='theta_e')
+                           name='theta_e')
 
     return xr.merge([dset, theta_e])
 
@@ -132,10 +132,10 @@ def compute_snow_change(dset, snowvar='sde'):
     hsnow = hsnow.where((hsnow > 0.5) | (hsnow < -0.5))
 
     hsnow = xr.DataArray(hsnow,
-                           coords= hsnow_acc.coords,
-                           attrs={'standard_name': 'Snow accumulation since beginning',
-                                  'units': hsnow_acc.units},
-                            name='snow_increment')
+                         coords=hsnow_acc.coords,
+                         attrs={'standard_name': 'Snow accumulation since beginning',
+                                'units': hsnow_acc.units},
+                         name='snow_increment')
 
     return xr.merge([dset, hsnow])
 
@@ -162,31 +162,32 @@ def compute_rain_snow_change(dset):
 def compute_wind_speed(dset, uvar='u', vvar='v'):
     wind = mpcalc.wind_speed(dset[uvar], dset[vvar]).to(units.kph)
     wind = xr.DataArray(wind, coords=dset[uvar].coords,
-                           attrs={'standard_name': 'wind intensity',
-                                  'units': wind.units},
-                                  name='wind_speed')
+                        attrs={'standard_name': 'wind intensity',
+                               'units': wind.units},
+                        name='wind_speed')
 
     return xr.merge([dset, wind])
 
 
 def compute_rate(dset):
-    dset.prate.metpy.convert_units('kilogram / meter ** 2 / hour')
-    rain = dset.prate.where(dset.crain == 1)
+    dset['prate'] = dset['prate'].metpy.convert_units('kilogram / meter ** 2 / hour').metpy.dequantify()
+    rain = dset['prate'].where(dset.crain == 1)
     rain.name = 'rain_rate'
-    snow = dset.prate.where(dset.csnow == 1)
+    snow = dset['prate'].where(dset.csnow == 1)
     snow.name = 'snow_rate'
-    ice = dset.prate.where(dset.cicep == 1)
-    ice.name = 'ice_rate'
-    frzr = dset.prate.where(dset.cfrzr == 1)
-    frzr.name = 'frzr_rate'
+    # ice = dset['prate'].where(dset.cicep == 1)
+    # ice.name = 'ice_rate'
+    # frzr = dset['prate'].where(dset.cfrzr == 1)
+    # frzr.name = 'frzr_rate'
 
-    return xr.merge([dset, rain, snow, ice, frzr])
+    return xr.merge([dset, rain, snow])
 
 
 def compute_soil_moisture_sat(dset, projection):
-    proj_options = proj_defs[projection]
-    saturation = xr.open_dataset(soil_saturation_file)['soil_saturation']
-    saturation = saturation.assign_coords({"lon": (((saturation.lon + 180) % 360) - 180)})
+    proj_options = utils.proj_defs[projection]
+    saturation = xr.open_dataset(utils.soil_saturation_file)['soil_saturation']
+    saturation = saturation.assign_coords(
+        {"lon": (((saturation.lon + 180) % 360) - 180)})
     saturation = saturation.sel(lat=slice(proj_options['llcrnrlat'],
                                           proj_options['urcrnrlat']),
                                 lon=slice(proj_options['llcrnrlon'],
@@ -200,8 +201,8 @@ def compute_soil_moisture_sat(dset, projection):
     w_so_sat = (w_so.values[:, :, :] / saturation.values[None, :, :]) * 100.
 
     w_so_sat = xr.DataArray(w_so_sat, coords=w_so.coords,
-                           attrs={'standard_name': 'Soil moisture saturation',
-                                  'units': '%'},
+                            attrs={'standard_name': 'Soil moisture saturation',
+                                   'units': '%'},
                             name='w_so_sat')
 
     # Fix weird points with ice/rock
