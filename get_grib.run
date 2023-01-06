@@ -7,9 +7,9 @@ echo "--------------------------------------------------------------------------
 echo "gfs: Starting processing of GFS model data - `date`"
 echo "----------------------------------------------------------------------------------------------"
 
-export GRIBDIR=/tmp/gfs/
-export IMGDIR=/tmp/gfs/
-export MODEL_DATA_FOLDER=/tmp/gfs/
+export GRIBDIR=/home/ekman/ssd/guido/gfs/
+export IMGDIR=/home/ekman/ssd/guido/gfs/
+export MODEL_DATA_FOLDER=/home/ekman/ssd/guido/gfs/
 export HOME_SCRIPTS=$(pwd)
 export HOME_FOLDER=$(pwd)
 export NCFTP_BOOKMARK="mid"
@@ -18,7 +18,6 @@ DATA_PLOTTING=true
 DATA_UPLOAD=true
 
 #
-. ./functions_download_gefs.sh
 export SHELL=$(type -p bash)
 # We need to open many files at the same time
 ulimit -Sn 8192
@@ -32,7 +31,7 @@ mkdir -p ${GRIBDIR}nh_polar
 
 ##### COMPUTE the date variables to determine the run
 export MONTH=$(date -u +"%m")
-export DATE=$(date -u +"%d")
+export DAY=$(date -u +"%d")
 export YEAR=$(date -u +"%Y")
 export HOUR=$(date -u +"%H")
 
@@ -47,14 +46,14 @@ then
     export RUN=12
 elif [ $HOUR -ge 00 ] && [ $HOUR -lt 5 ]
 then
-    DATE=$(date -u -d'yesterday' +"%d")
+    DAY=$(date -u -d'yesterday' +"%d")
     export RUN=18
 else
     echo "Invalid hour!"
 fi
 
 echo "----------------------------------------------------------------------------------------------"
-echo "gfs: run ${YEAR}${MONTH}${DATE}${RUN}"
+echo "gfs: run ${YEAR}${MONTH}${DAY}${RUN}"
 echo "----------------------------------------------------------------------------------------------"
 
 # Move to the data folder to do processing
@@ -70,30 +69,36 @@ if [ "$DATA_DOWNLOAD" = true ]; then
     echo "gfs: Starting downloading of data - `date`"
     echo "----------------------------------------------------------------------------------------------"
 
-    #loop through forecast hours
-    hours_download=$(seq -s " " 3 3 384)
-    # hours_download=$(seq -s " " 3 3 12)
     export SKIP_SAME_TIME=1
     export CDI_INVENTORY_MODE=time
     #clean out the old grib data
     rm ${GRIBDIR}grib_gfs*
     rm ${GRIBDIR}*.nc
+    cp ${HOME_FOLDER}/*.py ${MODEL_DATA_FOLDER}
 
-    parallel -j 20 download_gfs_data ::: $hours_download
+    python downloader.py \
+    -d "${YEAR}${MONTH}${DAY}" \
+    -r "${RUN}" \
+    -v "PRMSL" "HGT" "TMP" "HGT" "TMP" "HGT" "TMP" "HGT" "TMP" "HGT" "SNOD" "CRAIN" "CSNOW" "PRATE" "APCP" "UGRD" "UGRD" "UGRD" "VGRD" "VGRD" "VGRD" "TMP" "TMP" "TMP"   \
+    -l "mean sea level" "500 mb" "500 mb" "10 mb" "10 mb" "50 mb" "50 mb" "850 mb" "850 mb" "0C isotherm" "surface" "surface" "surface" "surface" "surface" "150 mb" "250 mb" "300 mb" "150 mb" "250 mb" "300 mb" "150 mb" "250 mb" "300 mb" \
+    -o "${MODEL_DATA_FOLDER}"
+    if [[ $? = 0 ]]; then
+        echo "Downloaded files succesfully"
+    else
+        echo "Could not download data, exiting"
+        exit 1
+    fi
 
-    rm *.tmp
     # Delete empty files
-    FILENAMES=$GRIBDIR"grib_gfs_"$YEAR$MONTH$DATE"_"$RUN"_*"
+    FILENAMES=$GRIBDIR"grib_gfs_"$YEAR$MONTH$DAY"_"$RUN"_*"
     find $FILENAMES -empty -type f -delete
 
     # We need sellonlatbox to shift the grid from 0,360 to -180, 180. Somehow it is
     # easier to do it now that afterwars in Python
     cdo -f nc copy -sellonlatbox,-180,180,-90,90 -mergetime \
-                    $GRIBDIR"grib_gfs_"$YEAR$MONTH$DATE"_"$RUN"_*" \
-                    $GRIBDIR"gfs_${YEAR}${MONTH}${DATE}${RUN}.nc"
-    rm *.grib
-    # Remove all the non-netcdf files which are not necessary 
-    #rm $GRIBDIR/*[!.nc]
+                    $GRIBDIR"grib_gfs_"$YEAR$MONTH$DAY"_"$RUN"_*" \
+                    $GRIBDIR"gfs_${YEAR}${MONTH}${DAY}${RUN}.nc"
+    rm $GRIBDIR"grib_gfs_"$YEAR$MONTH$DAY"_"$RUN"_*"
 fi
 
 # SECTION 2 - DATA PLOTTING ############################################################
