@@ -14,8 +14,8 @@ export HOME_SCRIPTS=$(pwd)
 export HOME_FOLDER=$(pwd)
 export NCFTP_BOOKMARK="mid"
 DATA_DOWNLOAD=true
-DATA_PLOTTING=false
-DATA_UPLOAD=false
+DATA_PLOTTING=true
+DATA_UPLOAD=true
 
 #
 export SHELL=$(type -p bash)

@@ -37,7 +37,7 @@ def main():
     dset['gh'] = dset['gh'].metpy.convert_units('dam').metpy.dequantify()
 
     levels_temp = np.arange(-86, -18, 2)
-    levels_gph = np.arange(1970., 2050., 25.)
+    levels_gph = np.arange(1970., 2050., 20.)
 
     cmap = utils.get_colormap('temp_meteociel')
 

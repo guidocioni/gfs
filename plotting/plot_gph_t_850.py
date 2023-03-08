@@ -39,7 +39,7 @@ def main():
     dset['gh'] = dset['gh'].metpy.convert_units('dam').metpy.dequantify()
 
     levels_temp = np.arange(-34., 36., 2.)
-    levels_gph = np.arange(4700., 6000., 70.)
+    levels_gph = np.arange(470., 600., 10.)
 
     cmap = utils.get_colormap('temp_meteociel')
 
@@ -106,13 +106,13 @@ def plot_files(dss, **args):
             patheffects.withStroke(linewidth=0.5, foreground="w")])
 
         maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['gh'],
-                                             'max', 150, symbol='H', color='royalblue', random=True)
+                                             'max', 120, symbol='H', color='royalblue', random=True)
         minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['gh'],
-                                             'min', 150, symbol='L', color='coral', random=True)
+                                             'min', 120, symbol='L', color='coral', random=True)
 
         an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'],
-                                  'Geopotential height @500hPa [m] and temperature @850hPa [C]',
+                                  'Geopotential height @500hPa [dam] and temperature @850hPa [C]',
                                   loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)
 

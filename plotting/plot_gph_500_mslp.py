@@ -33,8 +33,9 @@ def main():
                               projection=projection)
 
     dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
+    dset['gh'] = dset['gh'].metpy.convert_units('dam').metpy.dequantify()
 
-    levels_gph = np.arange(5000., 6000., 40.)
+    levels_gph = np.arange(470., 600., 10.)
 
     cmap = utils.get_colormap('gph')
     #cmap = truncate_colormap(cmap, 0.05, 0.9)
@@ -98,9 +99,9 @@ def plot_files(dss, **args):
                                    fontsize=6)
 
         maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                             'max', 130, symbol='H', color='royalblue', random=True)
+                                             'max', 120, symbol='H', color='royalblue', random=True)
         minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                             'min', 130, symbol='L', color='coral', random=True)
+                                             'min', 120, symbol='L', color='coral', random=True)
 
         an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'],
